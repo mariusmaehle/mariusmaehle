@@ -1,7 +1,7 @@
 - 👋 Hi, I’m @mariusmaehle
 - 👀 I’m interested in learning business analytics
 - 🌱 I’m currently learning python
-- 💞️ I’m looking to collaborate on ...
+- 💞️ I’m looking to collaborate on the future
 - 📫 How to reach me marius.hm@hotmail.om
 
 <!---
