@@ -1,6 +1,6 @@
 - 👋 Hi, I’m @mariusmaehle
 - 👀 I’m interested in learning business analytics
-- 🌱 I’m currently learning python
+- 🌱 I’m currently learning R, Python & SQL
 - 💞️ I’m looking to collaborate on the future
 - 📫 How to reach me https://www.linkedin.com/in/marius-hm/
 
