@@ -1,5 +1,5 @@
 - 👋 Hi, I’m @mariusmaehle
-- 👀 I’m interested in making better decisions based on data analytics
+- 👀 I’m interested in making better business decisions based on data analytics
 - 🌱 I’m currently learning R, Python & SQL
 - 💞️ I’m looking to collaborate to create a more sustainable future
 - 📫 How to reach me linkedin.com/in/marius-hm/
