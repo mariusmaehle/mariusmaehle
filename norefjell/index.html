@@ -1,0 +1,305 @@
+<title>Norefjell-kalenderen</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700&family=Inter:wght@400;500;600&display=swap">
+<style>
+/* Layout: one column; booking form on top, four month calendars (des–mars) with ISO weeks, then the stay list. */
+:root{
+  --bg:#eef3f6; --surface:#ffffff; --sunk:#e3eaef; --line:#cfd9e0;
+  --fg:#15232c; --muted:#5b6c78; --accent:#1d5a4c; --accent-fg:#ffffff;
+  --holiday:#b5462f; --holiday-bg:#fbe9e4; --ferie-bg:#e6eff7; --danger:#b3261e;
+  --display:"Sora",ui-sans-serif,system-ui,sans-serif;
+  --body:"Inter",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --p-mamma:#c2410c; --p-pappa:#1e40af; --p-eveline:#a21caf; --p-morten:#0f766e;
+  --p-karina:#ca8a04; --p-hanne:#be123c; --p-marius:#4d7c0f;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f171c; --surface:#17222a; --sunk:#1e2b34; --line:#2c3c47;
+  --fg:#e6eef2; --muted:#97a8b3; --accent:#5fc3a6; --accent-fg:#0b1a15;
+  --holiday:#f08a72; --holiday-bg:#3a211b; --ferie-bg:#18293a; --danger:#f2867d;
+  --p-mamma:#fb923c; --p-pappa:#7aa2ff; --p-eveline:#e879f9; --p-morten:#2dd4bf;
+  --p-karina:#facc15; --p-hanne:#fb7185; --p-marius:#a3e635; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f171c; --surface:#17222a; --sunk:#1e2b34; --line:#2c3c47;
+  --fg:#e6eef2; --muted:#97a8b3; --accent:#5fc3a6; --accent-fg:#0b1a15;
+  --holiday:#f08a72; --holiday-bg:#3a211b; --ferie-bg:#18293a; --danger:#f2867d;
+  --p-mamma:#fb923c; --p-pappa:#7aa2ff; --p-eveline:#e879f9; --p-morten:#2dd4bf;
+  --p-karina:#facc15; --p-hanne:#fb7185; --p-marius:#a3e635; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:15px;line-height:1.5}
+.wrap{max-width:980px;margin:0 auto;padding-block:28px 60px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:28px}
+h1,h2,h3{font-family:var(--display);text-wrap:balance;margin:0}
+h1{font-size:clamp(1.7rem,4vw,2.3rem);letter-spacing:-.02em}
+h2{font-size:1.2rem}
+.sub{color:var(--muted);margin:6px 0 0}
+.eyebrow{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);font-weight:600}
+.status{font-size:.85rem;color:var(--muted)}
+.status.warn{color:var(--holiday)}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.field{display:flex;flex-direction:column;gap:6px}
+.label{font-size:.78rem;font-weight:600;color:var(--muted);letter-spacing:.04em;text-transform:uppercase}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{border:1px solid var(--line);background:var(--surface);color:var(--fg);border-radius:999px;padding:6px 12px 6px 8px;
+  font:500 .9rem var(--body);cursor:pointer;display:inline-flex;align-items:center;gap:7px}
+.chip .dot{width:12px;height:12px;border-radius:50%;background:var(--c)}
+.chip[aria-pressed="true"]{background:color-mix(in srgb,var(--c) 16%,var(--surface));border-color:var(--c)}
+.seg{display:grid;grid-template-columns:repeat(3,auto);border:1px solid var(--line);border-radius:8px;overflow:hidden;width:fit-content;max-width:100%}
+.seg button{border:0;background:transparent;color:var(--fg);padding:8px 12px;font:500 .9rem var(--body);cursor:pointer;min-width:0}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-fg)}
+.row{display:flex;flex-wrap:wrap;gap:14px}
+.row .field{flex:1 1 160px;min-width:0}
+input[type=date],input[type=text]{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+.actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.btn{border:0;border-radius:8px;padding:10px 18px;font:600 .95rem var(--body);cursor:pointer;background:var(--accent);color:var(--accent-fg)}
+.btn.ghost{background:transparent;color:var(--fg);border:1px solid var(--line)}
+.btn.danger{background:var(--danger);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.msg{font-size:.88rem;color:var(--muted)}
+.msg.err{color:var(--danger)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.82rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.legend .sq{border-radius:3px}
+
+.months{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,440px),1fr));gap:20px}
+.month{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;min-width:0}
+.month h3{font-size:1rem;margin-bottom:10px;text-transform:capitalize}
+.grid{display:grid;grid-template-columns:28px repeat(7,1fr);gap:3px}
+.dow,.wk{font-size:.68rem;color:var(--muted);text-align:center;font-variant-numeric:tabular-nums;align-self:center}
+.dow{padding-bottom:2px;font-weight:600}
+.day{min-height:58px;border-radius:6px;background:var(--sunk);padding:3px 4px;display:flex;flex-direction:column;gap:2px;
+  border:1px solid transparent;cursor:pointer;text-align:left;font:inherit;color:inherit;min-width:0}
+.day.out{visibility:hidden}
+.day.off{opacity:.35;cursor:default}
+.day.ferie{background:var(--ferie-bg)}
+.day.holiday{background:var(--holiday-bg)}
+.day.holiday .n{color:var(--holiday);font-weight:700}
+.day.today{border-color:var(--accent)}
+.day .n{font-size:.75rem;font-variant-numeric:tabular-nums;line-height:1.2}
+.lane{display:flex;gap:2px;align-items:center;min-height:10px;flex-wrap:wrap}
+.lane b{font-size:.55rem;color:var(--muted);font-weight:600;width:9px}
+.lane i{width:8px;height:8px;border-radius:50%;background:var(--c)}
+.daynote{font-size:.6rem;color:var(--holiday);line-height:1.1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.stays{display:flex;flex-direction:column;gap:10px}
+.stay{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:12px 14px;display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+.stay .when{font-family:var(--display);font-weight:600;font-variant-numeric:tabular-nums;min-width:0}
+.stay .who{display:flex;flex-wrap:wrap;gap:6px;flex:1 1 220px;min-width:0}
+.tag{font-size:.8rem;padding:2px 9px;border-radius:999px;background:color-mix(in srgb,var(--c) 15%,transparent);color:var(--fg);border:1px solid color-mix(in srgb,var(--c) 50%,transparent)}
+.unit{font-size:.8rem;color:var(--muted)}
+.stay .note{flex-basis:100%;font-size:.88rem;color:var(--muted);margin:0;overflow-wrap:anywhere}
+.stay .ops{display:flex;gap:6px;margin-left:auto}
+.stay .ops button{font-size:.82rem;padding:6px 10px}
+.empty{color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:10px;padding:20px;text-align:center}
+@media (prefers-reduced-motion:no-preference){.chip,.seg button,.btn{transition:background .15s,border-color .15s}}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Sesongen 2026/27 · 1. desember – 2. påskedag</div>
+    <h1>Norefjell-kalenderen</h1>
+    <p class="sub">Legg inn når dere er på hytta. Både vår leilighet og naboleiligheten.</p>
+    <p class="status" id="status">Kobler til …</p>
+  </header>
+
+  <section class="panel" aria-labelledby="formTitle">
+    <h2 id="formTitle">Legg inn opphold</h2>
+    <div class="field">
+      <span class="label">Hvem</span>
+      <div class="chips" id="people"></div>
+    </div>
+    <div class="field">
+      <span class="label">Leilighet</span>
+      <div class="seg" id="units"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label class="label" for="from">Fra</label><input type="date" id="from" min="2026-12-01" max="2027-03-29"></div>
+      <div class="field"><label class="label" for="to">Til</label><input type="date" id="to" min="2026-12-01" max="2027-03-29"></div>
+    </div>
+    <div class="field"><label class="label" for="note">Kommentar (valgfritt)</label><input type="text" id="note" maxlength="200" placeholder="F.eks. kommer sent fredag"></div>
+    <div class="actions">
+      <button class="btn" id="save">Lagre opphold</button>
+      <button class="btn ghost" id="cancel" hidden>Avbryt endring</button>
+      <span class="msg" id="msg"></span>
+    </div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:12px" aria-labelledby="calTitle">
+    <h2 id="calTitle">Kalender</h2>
+    <div class="legend" id="legend"></div>
+    <div class="months" id="months"></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:12px" aria-labelledby="listTitle">
+    <h2 id="listTitle">Alle opphold</h2>
+    <div class="stays" id="stays"><div class="empty">Ingen opphold lagt inn ennå. Velg hvem, leilighet og datoer over, og trykk «Lagre opphold».</div></div>
+  </section>
+</div>
+
+<script>
+const PEOPLE=[
+  {id:"mamma",name:"Mamma"},{id:"pappa",name:"Pappa"},{id:"eveline",name:"Eveline"},
+  {id:"morten",name:"Morten"},{id:"karina",name:"Karina"},{id:"hanne",name:"Hanne"},{id:"marius",name:"Marius"}];
+const UNITS=[{id:"var",name:"Vår leilighet",short:"V"},{id:"nabo",name:"Naboleiligheten",short:"N"},{id:"begge",name:"Begge"}];
+const START="2026-12-01", END="2027-03-29";
+const HOLIDAYS={"2026-12-24":"Julaften","2026-12-25":"1. juledag","2026-12-26":"2. juledag","2026-12-31":"Nyttårsaften",
+  "2027-01-01":"1. nyttårsdag","2027-03-21":"Palmesøndag","2027-03-25":"Skjærtorsdag","2027-03-26":"Langfredag",
+  "2027-03-28":"1. påskedag","2027-03-29":"2. påskedag"};
+const FERIE=[["2026-12-21","2027-01-03"],["2027-02-22","2027-03-07"],["2027-03-20","2027-03-29"]]; // jul, vinterferie uke 8–9, påske
+
+const $=id=>document.getElementById(id);
+const pcolor=id=>`var(--p-${id})`;
+const pname=id=>(PEOPLE.find(p=>p.id===id)||{name:id}).name;
+const uname=id=>(UNITS.find(u=>u.id===id)||{name:"?"}).name;
+
+let bookings=[], col=null, editing=null, confirmDel=null;
+const form={people:new Set(),unit:"var"};
+
+// ---- date helpers (all YYYY-MM-DD, local, noon to dodge DST) ----
+const parse=s=>{const[y,m,d]=s.split("-").map(Number);return new Date(y,m-1,d,12)};
+const fmt=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const day=t.getUTCDay()||7;
+  t.setUTCDate(t.getUTCDate()+4-day);const y0=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y0)/864e5+1)/7)}
+const nice=s=>parse(s).toLocaleDateString("nb-NO",{weekday:"short",day:"numeric",month:"short"});
+const inFerie=s=>FERIE.some(([a,b])=>s>=a&&s<=b);
+const todayStr=fmt(new Date());
+
+// ---- form ----
+function renderForm(){
+  const pe=$("people");pe.textContent="";
+  for(const p of PEOPLE){const b=document.createElement("button");b.type="button";b.className="chip";b.style.setProperty("--c",pcolor(p.id));
+    b.setAttribute("aria-pressed",form.people.has(p.id));const dot=document.createElement("span");dot.className="dot";b.append(dot,p.name);
+    b.onclick=()=>{form.people.has(p.id)?form.people.delete(p.id):form.people.add(p.id);renderForm()};pe.append(b)}
+  const un=$("units");un.textContent="";
+  for(const u of UNITS){const b=document.createElement("button");b.type="button";b.textContent=u.name;b.setAttribute("aria-pressed",form.unit===u.id);
+    b.onclick=()=>{form.unit=u.id;renderForm()};un.append(b)}
+  $("formTitle").textContent=editing?"Endre opphold":"Legg inn opphold";
+  $("save").textContent=editing?"Lagre endring":"Lagre opphold";
+  $("cancel").hidden=!editing;
+}
+function resetForm(){editing=null;form.people.clear();form.unit="var";$("from").value="";$("to").value="";$("note").value="";renderForm()}
+function setMsg(t,err){const m=$("msg");m.textContent=t;m.className="msg"+(err?" err":"")}
+
+$("from").addEventListener("change",()=>{const f=$("from").value,t=$("to");t.min=f||START;if(f&&(!t.value||t.value<f))t.value=f});
+$("cancel").onclick=()=>{resetForm();setMsg("")};
+$("save").onclick=async()=>{
+  const from=$("from").value,to=$("to").value,note=$("note").value.trim();
+  if(!col)return setMsg("Kalenderen er ikke tilkoblet. Åpne siden logget inn på claude.ai.",true);
+  if(!form.people.size)return setMsg("Velg minst én person.",true);
+  if(!from||!to)return setMsg("Velg fra- og til-dato.",true);
+  if(to<from)return setMsg("Til-datoen må være samme dag eller etter fra-datoen.",true);
+  if(from<START||to>END)return setMsg("Datoene må være mellom 1. desember og 2. påskedag (29. mars).",true);
+  const data={people:[...form.people],unit:form.unit,from,to,note,updatedAt:Date.now()};
+  $("save").disabled=true;
+  try{ if(editing){await col.doc(editing).set(data);setMsg("Endringen er lagret.")}
+       else{await col.add(data);setMsg("Oppholdet er lagret.")}
+       resetForm();
+  }catch(e){setMsg(e&&e.code==="permission_denied"?"Du har ikke tilgang til å lagre. Be den som delte siden om redigeringstilgang.":"Kunne ikke lagre. Prøv igjen.",true)}
+  finally{$("save").disabled=false}
+};
+
+// ---- calendar ----
+function renderLegend(){const l=$("legend");l.textContent="";
+  for(const p of PEOPLE){const s=document.createElement("span");const i=document.createElement("i");i.style.background=pcolor(p.id);s.append(i,p.name);l.append(s)}
+  const a=document.createElement("span");a.textContent="V = vår leilighet · N = naboleiligheten";l.append(a);
+  const f=document.createElement("span");const fi=document.createElement("i");fi.className="sq";fi.style.background="var(--ferie-bg)";fi.style.border="1px solid var(--line)";f.append(fi,"Skoleferie");l.append(f);
+  const h=document.createElement("span");const hi=document.createElement("i");hi.className="sq";hi.style.background="var(--holiday-bg)";h.append(hi,"Helligdag");l.append(h)}
+
+function occupancy(){ // day -> {var:Set, nabo:Set}
+  const m={};for(const b of bookings){const units=b.unit==="begge"?["var","nabo"]:[b.unit];
+    for(let d=parse(b.from);fmt(d)<=b.to;d.setDate(d.getDate()+1)){const k=fmt(d);m[k]=m[k]||{var:new Set,nabo:new Set};
+      for(const u of units)for(const p of b.people||[])m[k][u]?.add(p)}}
+  return m}
+
+function renderCalendar(){
+  const occ=occupancy(),root=$("months");root.textContent="";
+  for(const[y,mo]of[[2026,11],[2027,0],[2027,1],[2027,2]]){
+    const box=document.createElement("div");box.className="month";
+    const h=document.createElement("h3");h.textContent=new Date(y,mo,1).toLocaleDateString("nb-NO",{month:"long",year:"numeric"});box.append(h);
+    const g=document.createElement("div");g.className="grid";
+    const wk=document.createElement("div");wk.className="dow";wk.textContent="Uke";g.append(wk);
+    for(const d of["Ma","Ti","On","To","Fr","Lø","Sø"]){const e=document.createElement("div");e.className="dow";e.textContent=d;g.append(e)}
+    const first=new Date(y,mo,1,12),lead=(first.getDay()+6)%7,days=new Date(y,mo+1,0).getDate();
+    const cells=Math.ceil((lead+days)/7)*7;
+    for(let i=0;i<cells;i++){
+      const d=new Date(y,mo,1+i-lead,12);
+      if(i%7===0){const w=document.createElement("div");w.className="wk";w.textContent=isoWeek(d);g.append(w)}
+      const k=fmt(d),inMonth=d.getMonth()===mo,inSeason=k>=START&&k<=END;
+      const c=document.createElement("button");c.type="button";c.className="day";
+      if(!inMonth){c.classList.add("out");c.tabIndex=-1;c.setAttribute("aria-hidden","true");g.append(c);continue}
+      if(!inSeason){c.classList.add("off");c.disabled=true}
+      if(inFerie(k))c.classList.add("ferie");
+      if(HOLIDAYS[k])c.classList.add("holiday");
+      if(k===todayStr)c.classList.add("today");
+      const n=document.createElement("span");n.className="n";n.textContent=d.getDate();c.append(n);
+      const o=occ[k];const who=[];
+      for(const u of UNITS.slice(0,2)){const lane=document.createElement("span");lane.className="lane";
+        const set=o?o[u.id]:null;if(set&&set.size){const b=document.createElement("b");b.textContent=u.short;lane.append(b);
+          for(const p of PEOPLE)if(set.has(p.id)){const i=document.createElement("i");i.style.setProperty("--c",pcolor(p.id));lane.append(i)}
+          who.push(`${u.name}: ${[...set].map(pname).join(", ")}`)}
+        c.append(lane)}
+      if(HOLIDAYS[k]){const hn=document.createElement("span");hn.className="daynote";hn.textContent=HOLIDAYS[k];c.append(hn)}
+      c.title=[nice(k),HOLIDAYS[k],...who].filter(Boolean).join("\n");
+      c.setAttribute("aria-label",c.title.replace(/\n/g,". ")||nice(k));
+      if(inSeason)c.onclick=()=>{ if(!$("from").value||($("to").value&&$("from").value!==$("to").value)){$("from").value=k;$("to").value=k}
+        else if(k>=$("from").value){$("to").value=k}else{$("from").value=k}
+        $("to").min=$("from").value;setMsg(`Valgt ${nice($("from").value)} – ${nice($("to").value)}`);
+        $("formTitle").scrollIntoView({behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth",block:"start"})};
+      g.append(c)}
+    box.append(g);root.append(box)}
+}
+
+// ---- list ----
+function renderList(){
+  const root=$("stays");root.textContent="";
+  if(!bookings.length){const e=document.createElement("div");e.className="empty";e.textContent="Ingen opphold lagt inn ennå. Velg hvem, leilighet og datoer over, og trykk «Lagre opphold».";root.append(e);return}
+  for(const b of [...bookings].sort((a,c)=>a.from.localeCompare(c.from)||a.to.localeCompare(c.to))){
+    const r=document.createElement("div");r.className="stay";
+    const w=document.createElement("div");w.className="when";
+    const nights=Math.round((parse(b.to)-parse(b.from))/864e5);
+    w.textContent=b.from===b.to?nice(b.from):`${nice(b.from)} – ${nice(b.to)}`;
+    const u=document.createElement("div");u.className="unit";u.textContent=`${uname(b.unit)}${nights?` · ${nights} ${nights===1?"natt":"netter"}`:""}`;
+    const left=document.createElement("div");left.append(w,u);
+    const who=document.createElement("div");who.className="who";
+    for(const p of b.people||[]){const t=document.createElement("span");t.className="tag";t.style.setProperty("--c",pcolor(p));t.textContent=pname(p);who.append(t)}
+    const ops=document.createElement("div");ops.className="ops";
+    if(confirmDel===b.id){
+      const y=document.createElement("button");y.className="btn danger";y.textContent="Slett";y.onclick=async()=>{try{await col.doc(b.id).delete();confirmDel=null}catch(e){setMsg("Kunne ikke slette.",true)}};
+      const n=document.createElement("button");n.className="btn ghost";n.textContent="Behold";n.onclick=()=>{confirmDel=null;renderList()};
+      ops.append(y,n)
+    }else{
+      const e=document.createElement("button");e.className="btn ghost";e.textContent="Endre";e.onclick=()=>{
+        editing=b.id;form.people=new Set(b.people||[]);form.unit=b.unit;$("from").value=b.from;$("to").value=b.to;$("note").value=b.note||"";
+        renderForm();setMsg("");$("formTitle").scrollIntoView({block:"start"})};
+      const d=document.createElement("button");d.className="btn ghost";d.textContent="Slett";d.onclick=()=>{confirmDel=b.id;renderList()};
+      ops.append(e,d)}
+    r.append(left,who,ops);
+    if(b.note){const p=document.createElement("p");p.className="note";p.textContent=b.note;r.append(p)}
+    root.append(r)}
+}
+
+function renderAll(){renderCalendar();renderList()}
+
+// ---- data ----
+renderForm();renderLegend();renderAll();
+(async()=>{
+  const st=$("status");
+  let db=null;try{db=await window.claude?.use?.("db")}catch(e){db=null}
+  if(!db){st.textContent="Kalenderen kan ikke lastes her. Åpne lenken mens du er logget inn på claude.ai.";st.classList.add("warn");return}
+  col=db.collection("bookings");
+  const timer=setTimeout(()=>{st.textContent="Får ikke kontakt med kalenderen ennå. Sjekk nettet.";st.classList.add("warn")},10000);
+  col.onSnapshot(snap=>{
+    if(!snap.metadata.fromCache){clearTimeout(timer);st.classList.remove("warn");st.textContent=`${snap.size} opphold lagt inn · oppdateres automatisk`}
+    bookings=snap.docs.map(d=>{const x=d.data()||{};return{id:d.id,people:Array.isArray(x.people)?x.people.map(String):[],
+      unit:["var","nabo","begge"].includes(x.unit)?x.unit:"var",from:String(x.from||""),to:String(x.to||x.from||""),note:String(x.note||"")}})
+      .filter(b=>/^\d{4}-\d\d-\d\d$/.test(b.from)&&/^\d{4}-\d\d-\d\d$/.test(b.to));
+    renderAll();
+  },e=>{clearTimeout(timer);st.textContent="Kunne ikke laste kalenderen ("+(e&&e.code||"feil")+").";st.classList.add("warn")});
+})();
+</script>
